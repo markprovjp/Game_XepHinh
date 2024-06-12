@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Image Puzzle</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Calibri, Arial;
+            margin: 0;
+        }
+        h2 {
+            font-weight: normal;
+            text-align: center;
+        }
+        h3 {
+            font-weight: normal;
+            margin: 3px 0px;
+            text-align: center;
+        }
+
+        #collage hr {
+            border: none;
+            border-top: 2px solid #f5f2f2;
+            height: 1px;
+        }
+
+        #collage #playPanel {
+            background-color: #c2defc;
+            padding: 10px 0px;
+            margin: 10px auto;
+            max-width: 800px;
+            width: 95%;
+        }
+
+        #collage #actualImageBox {
+            display: inline-block;
+            font-size: 0.8em;
+            margin: 10px 10px;
+            vertical-align: top;
+            width: 280px;
+        }
+
+        #collage #stepBox, #collage #timeBox {
+            display: inline-block;
+            width: 48%;
+        }
+
+        #collage #stepBox div {
+            background-color: #c2defc;
+            display: inline-block;
+            padding: 1px 4px;
+            margin: 0px auto;
+            max-width: 800px;
+        }
+
+        #collage img#actualImage {
+            border: 2px solid rgb(134, 34, 180);
+            height: 280px;
+            width: 280px;
+        }
+
+        #collage #sortable {
+            border: 2px solid rgb(150, 35, 185);
+            list-style-type: none;
+            display: inline-block;
+            margin: 10px;
+            padding: 0;
+            width: 400px;
+        }
+
+        #collage #sortable li {
+            background-size: 400% 400%;
+            border: none;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+            float: left;
+            width: 100px;
+            height: 100px;
+        }
+
+        #collage button {
+            background-color: #f5f2f2;
+            border: 1px solid #cce;
+            display: inline;
+            font-size: 14px;
+            height: auto;
+            width: auto;
+            padding: 3px 8px;
+        }
+    </style>
+    <script>
+        var timerFunction;
+
+        var imagePuzzle = {
+            stepCount: 0,
+            startTime: new Date().getTime(),
+            timerRunning: false,
+
+            startGame: function (images, gridSize) {
+                this.setImage(images, gridSize);
+                helper.doc('playPanel').style.display = 'block';
+                helper.shuffle('sortable');
+                this.stepCount = 0;
+                this.startTime = new Date().getTime();
+                this.timerRunning = true;
+                this.tick();
+            },
+
+            tick: function () {
+                if (imagePuzzle.timerRunning) {
+                    var now = new Date().getTime();
+                    var elapsedTime = parseInt((now - imagePuzzle.startTime) / 1000, 10);
+                    helper.doc('timerPanel').textContent = elapsedTime;
+                    timerFunction = setTimeout(imagePuzzle.tick, 1000);
+                }
+            },
+
+            stopGame: function () {
+                this.timerRunning = false;
+                clearTimeout(timerFunction);
+            },
+
+            shuffleGame: function () {
+                helper.shuffle('sortable');
+            },
+
+            newPhoto: function () {
+                var gridSize = getSelectedGridSize();
+                this.setImage(images, gridSize);
+                helper.shuffle('sortable');
+                this.stepCount = 0;
+                helper.doc('stepCount').textContent = this.stepCount;
+                this.startTime = new Date().getTime();
+            },
+
+            setImage: function (images, gridSize = 4) {
+                var percentage = 100 / (gridSize - 1);
+                var image = images[Math.floor(Math.random() * images.length)];
+                helper.doc('imgTitle').innerHTML = image.title;
+                helper.doc('actualImage').setAttribute('src', image.src);
+                helper.doc('sortable').innerHTML = '';
+                for (var i = 0; i < gridSize * gridSize; i++) {
+                    var xpos = (percentage * (i % gridSize)) + '%';
+                    var ypos = (percentage * Math.floor(i / gridSize)) + '%';
+
+                    let li = document.createElement('li');
+                    li.id = i;
+                    li.setAttribute('data-value', i);
+                    li.style.backgroundImage = 'url(' + image.src + ')';
+                    li.style.backgroundSize = (gridSize * 100) + '%';
+                    li.style.backgroundPosition = xpos + ' ' + ypos;
+                    li.style.width = 400 / gridSize + 'px';
+                    li.style.height = 400 / gridSize + 'px';
+
+                    li.setAttribute('draggable', 'true');
+                    li.ondragstart = (event) => event.dataTransfer.setData('data', event.target.id);
+                    li.ondragover = (event) => event.preventDefault();
+                    li.ondrop = (event) => {
+                        let origin = helper.doc(event.dataTransfer.getData('data'));
+                        let dest = helper.doc(event.target.id);
+                        let p = dest.parentNode;
+
+                        if (origin && dest && p) {
+                            let temp = dest.nextSibling;
+                            let x_diff = origin.offsetLeft - dest.offsetLeft;
+                            let y_diff = origin.offsetTop - dest.offsetTop;
+
+                            if (y_diff == 0 && x_diff > 0) {
+                                // Hoán đổi trái
+                                p.insertBefore(origin, dest);
+                                p.insertBefore(temp, origin);
+                            } else {
+                                p.insertBefore(dest, origin);
+                                p.insertBefore(origin, temp);
+                            }
+
+                            let vals = Array.from(helper.doc('sortable').children).map(x => x.id);
+                            var now = new Date().getTime();
+                            helper.doc('stepCount').textContent = ++imagePuzzle.stepCount;
+                            document.querySelector('.timeCount').textContent = (parseInt((now - imagePuzzle.startTime) / 1000, 10));
+
+                            console.log("Is sorted:", isSorted(vals));
+                            console.log("All rotations correct:", allRotationsCorrect());
+
+                            if (isSorted(vals) && allRotationsCorrect()) {
+                                console.log("Puzzle completed!");
+                                helper.doc('actualImageBox').innerHTML = helper.doc('gameOver').innerHTML;
+                                helper.doc('stepCount').textContent = imagePuzzle.stepCount;
+                                imagePuzzle.stopGame();
+                            }
+                        }
+                    };
+
+                    // Xoay các mảnh ngẫu nhiên
+                    var rotation = Math.floor(Math.random() * 4) * 90; // 0, 90, 180, 270 độ
+                    li.style.transform = `rotate(${rotation}deg)`;
+                    li.dataset.rotation = rotation;
+
+                    // Thêm sự kiện click để xoay mảnh 90 độ
+                    li.onclick = function () {
+                        var currentRotation = parseInt(this.dataset.rotation);
+                        var newRotation = (currentRotation + 90) % 360;
+                        this.style.transform = `rotate(${newRotation}deg)`;
+                        this.dataset.rotation = newRotation;
+                    };
+
+                    helper.doc('sortable').appendChild(li);
+                }
+                helper.shuffle('sortable');
+            }
+        };
+
+        // Kiểm tra xem tất cả các mảnh có đúng hướng (0 độ) không
+        function allRotationsCorrect() {
+            return Array.from(helper.doc('sortable').children).every(li => parseInt(li.dataset.rotation) === 0);
+        }
+
+        isSorted = (arr) => arr.every((elem, index) => { return elem == index; });
+
+        var helper = {
+            doc: (id) => document.getElementById(id) || document.createElement("div"),
+
+            shuffle: (id) => {
+                var ul = document.getElementById(id);
+                for (var i = ul.children.length; i >= 0; i--) {
+                    ul.appendChild(ul.children[Math.random() * i | 0]);
+                }
+            }
+        };
+
+    </script>
+</head>
+
+<body>
+    <div id="collage">
+        <h2>Trò chơi ghép hình</h2>
+        <hr />
+        <div id="playPanel" style="padding:5px;display:none;">
+            <h3 id="imgTitle"></h3>
+            <hr />
+            <div style="display:inline-block; margin:auto; width:95%; vertical-align:top;">
+                <ul id="sortable" class="sortable"></ul>
+                <div id="actualImageBox">
+                    <div id="stepBox">
+                        <div>Số bước:</div>
+                        <div id="stepCount" class="stepCount">0</div>
+                    </div>
+                    <div id="timeBox">
+                        Thời gian : <span id="timerPanel"></span> giây
+                    </div>
+                    <img id="actualImage" />
+                    <div>Xếp lại để tạo ra bức tranh thế này.</div>
+                    <p id="levelPanel">
+                        <input type="radio" name="level" id="easy" checked="checked" value="3" onchange="imagePuzzle.startGame(images, this.value);" />
+                        <label for="easy">Dễ</label>
+                        <input type="radio" name="level" id="medium" value="4" onchange="imagePuzzle.startGame(images, this.value);" />
+                        <label for="medium">Trung bình</label>
+                        <input type="radio" name="level" id="hard" value="5" onchange="imagePuzzle.startGame(images, this.value);" />
+                        <label for="hard">Khó</label>
+                    </p>
+                    <div>
+                        <button id="btnStart" type="button" class="btn" onclick="imagePuzzle.startGame(images, getSelectedGridSize());">Bắt đầu</button>
+                        <button id="btnStop" type="button" class="btn" onclick="imagePuzzle.stopGame();">Dừng</button>
+                        <button id="btnShuffle" type="button" class="btn" onclick="imagePuzzle.shuffleGame();">Xáo trộn</button>
+                        <button id="btnNewPhoto" type="button" class="btn" onclick="imagePuzzle.newPhoto();">Ảnh khác</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="gameOver" style="display:none;">
+            <div style="background-color: #71e481; padding: 5px 10px 20px 10px; text-align: center; ">
+                <h2 style="text-align:center">Kết thúc trò chơi!!</h2>
+                Chúc mừng!! <br /> Bạn đã hoàn thành bức tranh này.
+                <br /> Số bước: <span id="stepCount" class="stepCount">0</span> bước.
+                <br /> Thời gian đã qua: <span class="timeCount">0</span> giây<br />
+                <div>
+                    <button type="button" onclick="window.location.reload(true);">Chơi lại</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            var images = [
+                { src: 'images/london-bridge.jpg', title: 'Cầu London' },
+                { src: 'images/lotus-temple.jpg', title: 'Đền Lotus' },
+                { src: 'images/qutub-minar.jpg', title: 'Qutub Minar' },
+                { src: 'images/statue-of-liberty.jpg', title: 'Tượng Nữ thần Tự do' },
+                { src: 'images/taj-mahal.jpg', title: 'Taj Mahal' }
+            ];
+
+            window.onload = function () {
+                var gridSize = getSelectedGridSize();
+                imagePuzzle.startGame(images, gridSize);
+            };
+
+            function getSelectedGridSize() {
+                return document.querySelector('#levelPanel input[type="radio"]:checked').getAttribute('value');
+            }
+        </script>
+    </div>
+</body>
+</html>
