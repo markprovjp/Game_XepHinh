@@ -13,52 +13,10 @@
     </head>
 
     <body>
-        <div class="container">
-            <h1 class="text-center">Game Xếp Hình</h1>
-            <div class="row">
-                <div class="col-md-6">
-                    <!-- <h3>Drop puzzle pieces here</h3> -->
-                    <div class="gallery-painting" id="gallery-painting">
-                        <!-- 25 drop zones will be inserted here by JavaScript -->
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <!-- <h3>Drag the puzzle pieces below</h3> -->
-                    <div class="gallery-list" id="gallery-list">
-                        <!-- 25 pieces will be inserted here by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            <div class="text-center mt-4">
-                <input type="file" id="upload" accept="image/*" multiple>
-                <button class="start-button">Start Game</button>
-                <button class="reset-button">Reset Puzzle</button>
-            </div>
-        </div>
+       <div class="container"><h1 class="text-center">Game Xếp Hình</h1><div class="row"><div class="col-md-6"><div class="gallery-painting" id="gallery-painting"></div></div><div class="col-md-6"><div class="gallery-list" id="gallery-list"></div></div></div><div class="text-center mt-4"><input type="file" id="upload" accept="image/*" multiple><button class="start-button">Start Game</button><button class="reset-button">Reset Puzzle</button></div></div>
 
         <script>
-            var galleryList = document.getElementById('gallery-list');
-            var galleryPainting = document.getElementById('gallery-painting');
-
-            for (var i = 1; i <= 25; i++) {
-                var img = document.createElement('img');
-                img.setAttribute('draggable', 'true');
-                img.setAttribute('src', 'https://via.placeholder.com/50');
-                img.setAttribute('class', 'drag');
-                img.setAttribute('value', i);
-                galleryList.appendChild(img);
-
-                var div = document.createElement('div');
-                div.setAttribute('class', 'drop');
-                div.setAttribute('value', i);
-                div.onclick = function () {
-                    var currentRotation = this.style.transform.match(/rotate\((\d+)deg\)/);
-                    var rotation = currentRotation ? parseInt(currentRotation[1]) : 0;
-                    rotation = (rotation + 90) % 360;
-                    this.style.transform = 'rotate(' + rotation + 'deg)';
-                };
-                galleryPainting.appendChild(div);
-            }
+           var galleryList=document.getElementById('gallery-list'); var galleryPainting=document.getElementById('gallery-painting'); for (var i=1; i <=25; i++){ var img=document.createElement('img'); img.setAttribute('draggable', 'true'); img.setAttribute('src', 'https://via.placeholder.com/50'); img.setAttribute('class', 'drag'); img.setAttribute('value', i); galleryList.appendChild(img); var div=document.createElement('div'); div.setAttribute('class', 'drop'); div.setAttribute('value', i); div.onclick=function (){ var currentRotation=this.style.transform.match(/rotate\((\d+)deg\)/); var rotation=currentRotation ? parseInt(currentRotation[1]) : 0; rotation=(rotation + 90) % 360; this.style.transform='rotate(' + rotation + 'deg)';}; galleryPainting.appendChild(div);}
         </script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
